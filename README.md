@@ -41,3 +41,10 @@ UnQLite is written in ANSI C, Thread-safe, Full reentrant, compiles unmodified a
 
 
 https://unqlite.symisc.net
+
+
+### WebAssembly Port
+
+The original UnQLite relies on file-locking primitives that are not supported in WebAssembly (WASM). To enable WASM compilation, these functions have been bypassed, which may lead to potential limitations or risks when handling concurrent access.
+
+To compile UnQLite to WebAssembly, replace the original CMakeLists.txt file with the provided CMakeLists_wasm.txt.

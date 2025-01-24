@@ -53160,6 +53160,7 @@ static int unixLock(unqlite_file *id, int eFileLock){
   ** even if the locking primitive used is always a write-lock.
   */
   int rc = UNQLITE_OK;
+#ifndef WASM /* WASM does not support the file locking primitives used by unqlite. Skip this function */
   unixFile *pFile = (unixFile*)id;
   unixInodeInfo *pInode = pFile->pInode;
   struct flock lock;
@@ -53295,6 +53296,7 @@ static int unixLock(unqlite_file *id, int eFileLock){
   }
 end_lock:
   unixLeaveMutex();
+#endif /* WASM */
   return rc;
 }
 /*
@@ -53323,10 +53325,11 @@ static void setPendingFd(unixFile *pFile){
 ** remove the write lock on a region when a read lock is set.
 */
 static int _posixUnlock(unqlite_file *id, int eFileLock, int handleNFSUnlock){
+  int rc = UNQLITE_OK;
+#ifndef WASM /* WASM does not support the file locking primitives used by unqlite. Skip this function */
   unixFile *pFile = (unixFile*)id;
   unixInodeInfo *pInode;
   struct flock lock;
-  int rc = UNQLITE_OK;
   int h;
   int tErrno;                      /* Error code from system call errors */
 
@@ -53461,6 +53464,7 @@ end_unlock:
   unixLeaveMutex();
   
   if( rc==UNQLITE_OK ) pFile->eFileLock = eFileLock;
+#endif /* WASM */
   return rc;
 }
 /*
