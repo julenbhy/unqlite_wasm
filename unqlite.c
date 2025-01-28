@@ -53,6 +53,86 @@
  /*
   * Make the sure the following directive is defined in the amalgamation build.
   */
+
+
+#ifdef WASM
+
+#define DF_RDLCK 0 
+#define F_WRLCK 1 
+#define F_UNLCK 2 
+#define F_GETLK 3 
+#define F_SETLK 4
+
+typedef unsigned int uid_t;
+typedef unsigned int gid_t;
+typedef unsigned mode_t;
+
+// moke getpwnam function
+struct passwd {
+	char *pw_name; /* User's login name. */
+	char *pw_passwd; /* User's encrypted password. */
+	uid_t pw_uid; /* Numerical user ID. */
+	gid_t pw_gid; /* Numerical group ID. */
+	char *pw_gecos; /* User's real name. */
+	char *pw_dir; /* Initial working directory. */
+	char *pw_shell; /* Program to use as shell. */
+};
+
+struct group{
+	char *gr_name; /* Group name. */
+	char *gr_passwd; /* Encrypted password. */
+	gid_t gr_gid; /* Group ID. */
+	char **gr_mem; /* Member list. */
+};
+
+int chown(const char *path, uid_t owner, gid_t group) {return 0;}
+
+int chroot(const char *path) {return 0;}
+
+int getuid(void) {return 0;}
+
+int getgid(void) {return 0;}
+
+mode_t umask(mode_t cmask) {return 0;}
+
+int flock(int fd, int operation) {return 0;} // UNQLITE_OK
+
+struct passwd *getpwnam(const char *name) {
+	static struct passwd p;
+	p.pw_name = "root";
+	p.pw_passwd = "x";
+	p.pw_uid = 0;
+	p.pw_gid = 0;
+	p.pw_gecos = "root";
+	p.pw_dir = "/";
+	p.pw_shell = "/bin/sh";
+	return &p;
+}
+
+struct group *getgrnam(const char *name){
+	static struct group g;
+	g.gr_name = "root";
+	g.gr_passwd = "x";
+	g.gr_gid = 0;
+	g.gr_mem = 0;
+	return &g;
+}
+
+struct passwd *getpwuid(uid_t uid) {
+	static struct passwd p;typedef unsigned mode_t;
+
+	p.pw_name = "root";
+	p.pw_passwd = "x";
+	p.pw_uid = 0;
+	p.pw_gid = 0;
+	p.pw_gecos = "root";
+	p.pw_dir = "/";
+	p.pw_shell = "/bin/sh";
+	return &p;
+}
+#endif /* WASM */
+
+
  #ifndef UNQLITE_AMALGAMATION
  #define UNQLITE_AMALGAMATION
  #define JX9_AMALGAMATION
@@ -37510,6 +37590,7 @@ static int jx9Builtin_fwrite(jx9_context *pCtx, int nArg, jx9_value **apArg)
  */
 static int jx9Builtin_flock(jx9_context *pCtx, int nArg, jx9_value **apArg)
 {
+#ifndef WASM
 	const jx9_io_stream *pStream;
 	io_private *pDev;
 	int nLock;
@@ -37545,6 +37626,7 @@ static int jx9Builtin_flock(jx9_context *pCtx, int nArg, jx9_value **apArg)
 	rc = pStream->xLock(pDev->pHandle, nLock);
 	/* IO result */
 	jx9_result_bool(pCtx, rc == JX9_OK);
+#endif /* WASM */
 	return JX9_OK;
 }
 /*
@@ -40171,8 +40253,10 @@ static const jx9_io_stream sWinFileStream = {
 #include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/file.h>
+#ifndef WASM
 #include <pwd.h>
 #include <grp.h>
+#endif /* WASM */
 #include <dirent.h>
 #include <utime.h>
 #include <stdio.h>
@@ -40441,6 +40525,7 @@ static int UnixVfs_Chown(const char *zPath, const char *zUser)
   }
   uid = pwd->pw_uid;
   rc = chown(zPath, uid, -1);
+  printf("chown(%s,%d,-1) -> %d\n", zPath, uid, rc);
   return rc == 0 ? JX9_OK : -1;
 #else
 	SXUNUSED(zPath);
